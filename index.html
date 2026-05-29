@@ -704,8 +704,8 @@
     cobb: {
       formula: 'U(x, y) = x^a · y^b',
       params: {
-        a: { lab: 'a', min: 0.3, max: 3, step: 0.1, val: 1 },
-        b: { lab: 'b', min: 0.3, max: 3, step: 0.1, val: 1 },
+        a: { lab: 'a', min: 0.3, max: 3, step: 0.1, val: 0.5 },
+        b: { lab: 'b', min: 0.3, max: 3, step: 0.1, val: 0.5 },
       },
       U: (x, y, p) =>
         Math.pow(Math.max(x, 1e-6), p.a) * Math.pow(Math.max(y, 1e-6), p.b),
