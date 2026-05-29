@@ -1,0 +1,1444 @@
+<!-- Indifference Curve & Preference Relation Explorer -->
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Preference Atlas — Indifference Curves & Utility</title>
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,800;1,9..144,500&family=Spectral:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+  :root {
+    --paper: #f3ecdc;
+    --paper-2: #efe6d2;
+    --paper-hi: #f7f1e4;
+    --ink: #23211c;
+    --ink-soft: #5a554a;
+    --line: #cbbfa3;
+    --rule: #b9ac8c;
+    --teal: #0f6b5c;
+    --teal-deep: #0a4a40;
+    --ox: #a83a26; /* bundle A */
+    --blue: #2c5577; /* bundle B */
+    --gold: #c08a2d;
+    --shade: rgba(15, 107, 92, 0.13);
+    --panel-a: #fbf6ea;
+    --panel-b: #f4ecda;
+    --field: #fffdf6;
+    --inset: rgba(255, 255, 255, 0.85);
+    --grain: 0.5;
+    --grain-blend: multiply;
+  }
+  :root[data-theme='dark'] {
+    --paper: #16140e;
+    --paper-2: #1c1912;
+    --paper-hi: #211d15;
+    --ink: #e9dfca;
+    --ink-soft: #9c927a;
+    --line: #3a3325;
+    --rule: #3f3727;
+    --teal: #2fae96;
+    --teal-deep: #5cc3ad;
+    --ox: #e0795f;
+    --blue: #7fb0db;
+    --gold: #d6a23f;
+    --shade: rgba(47, 174, 150, 0.18);
+    --panel-a: #211d15;
+    --panel-b: #1a1711;
+    --field: #13110b;
+    --inset: rgba(255, 255, 255, 0.05);
+    --grain: 0.3;
+    --grain-blend: overlay;
+  }
+  * {
+    box-sizing: border-box;
+  }
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+  }
+  body {
+    background: radial-gradient(
+      120% 120% at 80% -10%,
+      var(--paper-hi) 0%,
+      var(--paper) 42%,
+      var(--paper-2) 100%
+    );
+    color: var(--ink);
+    font-family: 'Spectral', Georgia, serif;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+    position: relative;
+    transition: background 0.35s ease, color 0.35s ease;
+  }
+  /* paper grain */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    opacity: var(--grain);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.045'/%3E%3C/svg%3E");
+    mix-blend-mode: var(--grain-blend);
+  }
+  .wrap {
+    position: relative;
+    z-index: 1;
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 30px 26px 60px;
+  }
+
+  header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 24px;
+    border-bottom: 1.5px solid var(--ink);
+    padding-bottom: 14px;
+    flex-wrap: wrap;
+    animation: rise 0.7s ease both;
+  }
+  .titleblock h1 {
+    font-family: 'Fraunces', serif;
+    font-weight: 800;
+    font-size: clamp(28px, 4vw, 46px);
+    margin: 0;
+    letter-spacing: -0.01em;
+    line-height: 0.98;
+    font-optical-sizing: auto;
+  }
+  .titleblock .sub {
+    font-style: italic;
+    color: var(--ink-soft);
+    font-size: 15px;
+    margin-top: 6px;
+    letter-spacing: 0.01em;
+  }
+  .stamp {
+    text-align: right;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-soft);
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    line-height: 1.7;
+  }
+  .stamp b {
+    color: var(--teal-deep);
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 26px;
+    margin-top: 26px;
+  }
+  @media (max-width: 900px) {
+    .layout {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .panel {
+    background: linear-gradient(180deg, var(--panel-a), var(--panel-b));
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    box-shadow: 0 1px 0 var(--inset) inset, 0 8px 26px -18px rgba(0, 0, 0, 0.5);
+    padding: 18px 18px 20px;
+    animation: rise 0.7s ease both;
+    transition: background 0.35s ease, border-color 0.35s ease;
+  }
+  .controls {
+    animation-delay: 0.06s;
+  }
+  .stage {
+    animation-delay: 0.12s;
+    padding: 14px 14px 8px;
+  }
+
+  .sect {
+    margin-bottom: 20px;
+  }
+  .sect:last-child {
+    margin-bottom: 0;
+  }
+  .label {
+    font-family: 'IBM Plex Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    font-size: 11px;
+    color: var(--teal-deep);
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 10px;
+  }
+  .label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: repeating-linear-gradient(
+      90deg,
+      var(--rule),
+      var(--rule) 3px,
+      transparent 3px,
+      transparent 6px
+    );
+  }
+
+  select,
+  input[type='text'] {
+    width: 100%;
+    font-family: 'Spectral', serif;
+    font-size: 16px;
+    color: var(--ink);
+    background: var(--field);
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    padding: 9px 10px;
+  }
+  select:focus {
+    outline: 2px solid var(--teal);
+  }
+  .formula {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    color: var(--ink-soft);
+    margin-top: 8px;
+    padding: 7px 9px;
+    background: var(--field);
+    border-left: 3px solid var(--gold);
+  }
+
+  .ctrl {
+    margin: 13px 0;
+  }
+  .ctrl .row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 3px;
+  }
+  .ctrl .nm {
+    font-size: 14px;
+  }
+  .ctrl .nm i {
+    color: var(--ink-soft);
+    font-size: 12px;
+  }
+  .ctrl .val {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    color: var(--teal-deep);
+    font-weight: 600;
+  }
+  input[type='range'] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 3px;
+    background: var(--rule);
+    border-radius: 3px;
+    outline: none;
+    margin: 7px 0;
+  }
+  input[type='range']::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    height: 17px;
+    width: 17px;
+    border-radius: 50%;
+    background: var(--teal);
+    border: 2px solid var(--field);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+    cursor: pointer;
+  }
+  input[type='range']::-moz-range-thumb {
+    height: 15px;
+    width: 15px;
+    border-radius: 50%;
+    background: var(--teal);
+    border: 2px solid var(--field);
+    cursor: pointer;
+  }
+  input[type='range'].A::-webkit-slider-thumb {
+    background: var(--ox);
+  }
+  input[type='range'].A::-moz-range-thumb {
+    background: var(--ox);
+  }
+  input[type='range'].B::-webkit-slider-thumb {
+    background: var(--blue);
+  }
+  input[type='range'].B::-moz-range-thumb {
+    background: var(--blue);
+  }
+
+  .btnrow {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  button.tog {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    background: var(--field);
+    color: var(--ink);
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    padding: 8px 11px;
+    cursor: pointer;
+    transition: all 0.15s;
+    flex: 1;
+    min-width: 0;
+  }
+  button.tog:hover {
+    border-color: var(--teal);
+    color: var(--teal-deep);
+  }
+  button.tog.on {
+    background: var(--teal);
+    color: var(--paper-hi);
+    border-color: var(--teal);
+  }
+  button.tog.A.on {
+    background: var(--ox);
+    border-color: var(--ox);
+  }
+  button.tog.B.on {
+    background: var(--blue);
+    border-color: var(--blue);
+  }
+
+  .switch {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    cursor: pointer;
+    font-size: 14px;
+    user-select: none;
+  }
+  .switch input {
+    display: none;
+  }
+  .track {
+    width: 38px;
+    height: 20px;
+    border-radius: 20px;
+    background: var(--rule);
+    position: relative;
+    transition: 0.2s;
+    flex: none;
+  }
+  .track::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--field);
+    transition: 0.2s;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  }
+  .switch input:checked + .track {
+    background: var(--teal);
+  }
+  .switch input:checked + .track::after {
+    left: 20px;
+  }
+
+  /* stage */
+  #plot {
+    width: 100%;
+    height: 560px;
+  }
+  @media (max-width: 900px) {
+    #plot {
+      height: 440px;
+    }
+  }
+  .stagehead {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 2px 6px 10px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .rightctrls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .viewtoggle {
+    display: flex;
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .viewtoggle button {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    background: var(--field);
+    border: none;
+    padding: 8px 15px;
+    cursor: pointer;
+    color: var(--ink-soft);
+  }
+  .viewtoggle button.on {
+    background: var(--ink);
+    color: var(--paper);
+  }
+  .hint {
+    font-style: italic;
+    color: var(--ink-soft);
+    font-size: 12.5px;
+  }
+  .themebtn {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    background: var(--field);
+    color: var(--ink-soft);
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    padding: 8px 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .themebtn:hover {
+    border-color: var(--teal);
+    color: var(--teal-deep);
+  }
+
+  /* readouts */
+  .verdict {
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    background: var(--field);
+    padding: 13px 14px;
+    margin-top: 6px;
+  }
+  .vrow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 14px;
+    padding: 3px 0;
+  }
+  .vrow .k {
+    color: var(--ink-soft);
+  }
+  .vrow .v {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+  }
+  .dotA {
+    color: var(--ox);
+  }
+  .dotB {
+    color: var(--blue);
+  }
+  .pref {
+    text-align: center;
+    font-family: 'Fraunces', serif;
+    font-size: 20px;
+    font-weight: 600;
+    margin-top: 8px;
+    padding-top: 10px;
+    border-top: 1px dashed var(--rule);
+  }
+  .pref .sym {
+    font-size: 24px;
+    vertical-align: -1px;
+  }
+
+  .note {
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    font-style: italic;
+    line-height: 1.55;
+    margin-top: 10px;
+  }
+  .mini {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-soft);
+  }
+
+  footer {
+    margin-top: 34px;
+    border-top: 1px solid var(--rule);
+    padding-top: 12px;
+    font-size: 12px;
+    color: var(--ink-soft);
+    font-style: italic;
+  }
+
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(14px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  .loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 560px;
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--ink-soft);
+    letter-spacing: 0.1em;
+  }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="titleblock">
+      <h1>The Preference Atlas</h1>
+      <div class="sub">
+        Indifference curves, upper-contour sets &amp; the indirect utility
+        function
+      </div>
+    </div>
+    <div class="stamp">
+      Consumer&nbsp;Theory<br />
+      Fig.&nbsp;<b>I</b> — Utility&nbsp;over&nbsp;(x,&nbsp;y)<br />
+      Interactive&nbsp;Plate
+    </div>
+  </header>
+
+  <div class="layout">
+    <!-- ============ CONTROLS ============ -->
+    <div class="panel controls">
+      <div class="sect">
+        <p class="label">Utility function</p>
+        <select id="ufn">
+          <option value="cobb">Cobb–Douglas</option>
+          <option value="subs">Perfect substitutes</option>
+          <option value="comp">Perfect complements (Leontief)</option>
+          <option value="ces">CES (constant elasticity)</option>
+          <option value="quasi">Quasilinear in y</option>
+        </select>
+        <div class="formula" id="formula"></div>
+        <div id="params"></div>
+      </div>
+
+      <div class="sect">
+        <p class="label">Direct utility level &nbsp;ū</p>
+        <div class="ctrl">
+          <div class="row">
+            <span class="nm">Highlighted indifference curve</span
+            ><span class="val" id="ulvlVal">—</span>
+          </div>
+          <input type="range" id="ulvl" min="0" max="100" value="45" />
+          <div class="mini">
+            Shaded region = weakly-preferred set { (x,y) : U(x,y) ≥ ū }
+          </div>
+        </div>
+      </div>
+
+      <div class="sect">
+        <p class="label">Compare two bundles</p>
+        <div class="ctrl" style="margin-top: 0">
+          <div class="vrow">
+            <span class="nm dotA">● A &nbsp;(x, y)</span
+            ><span class="val" id="coordA">—</span>
+          </div>
+          <div class="vrow">
+            <span class="nm dotB">● B &nbsp;(x, y)</span
+            ><span class="val" id="coordB">—</span>
+          </div>
+        </div>
+        <div class="note">
+          Drag <b class="dotA">A</b> and <b class="dotB">B</b> directly on the
+          2-D map to reposition them.
+        </div>
+      </div>
+
+      <div class="sect">
+        <p class="label">Budget &amp; indirect utility</p>
+        <label class="switch" style="margin-bottom: 6px">
+          <input type="checkbox" id="budgetOn" />
+          <span class="track"></span>
+          <span>Show budget line &amp; optimum</span>
+        </label>
+        <div id="budgetCtrls" style="display: none">
+          <div class="ctrl">
+            <div class="row">
+              <span class="nm">price <i>pₓ</i></span
+              ><span class="val" id="pxV"></span>
+            </div>
+            <input
+              type="range"
+              id="px"
+              min="0.2"
+              max="5"
+              step="0.1"
+              value="1"
+            />
+            <div class="row">
+              <span class="nm">price <i>p_y</i></span
+              ><span class="val" id="pyV"></span>
+            </div>
+            <input
+              type="range"
+              id="py"
+              min="0.2"
+              max="5"
+              step="0.1"
+              value="1"
+            />
+            <div class="row">
+              <span class="nm">income <i>m</i></span
+              ><span class="val" id="mV"></span>
+            </div>
+            <input type="range" id="m" min="1" max="20" step="0.5" value="8" />
+          </div>
+          <div class="note">
+            The optimum solves max U(x,y) s.t. pₓx + p_y y = m. Its utility
+            value is the <b>indirect utility</b> v(p, m).
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ STAGE ============ -->
+    <div class="panel stage">
+      <div class="stagehead">
+        <div class="viewtoggle">
+          <button id="v2d" class="on">2D — Map</button>
+          <button id="v3d">3D — Surface</button>
+        </div>
+        <div class="rightctrls">
+          <span class="hint" id="stageHint"
+            >Drag bundle A or B to reposition</span
+          >
+          <button id="themeBtn" class="themebtn" title="Toggle dark mode">
+            ☾&nbsp;Dark
+          </button>
+        </div>
+      </div>
+      <div id="plot"></div>
+
+      <!-- verdict -->
+      <div class="verdict">
+        <div class="vrow">
+          <span class="k dotA">● U(A)</span
+          ><span class="v dotA" id="uaOut">—</span>
+        </div>
+        <div class="vrow">
+          <span class="k dotB">● U(B)</span
+          ><span class="v dotB" id="ubOut">—</span>
+        </div>
+        <div class="vrow">
+          <span class="k">MRS at A &nbsp;(−dy/dx)</span
+          ><span class="v" id="mrsOut">—</span>
+        </div>
+        <div class="vrow" id="ivRow" style="display: none">
+          <span class="k">indirect utility v(p, m)</span
+          ><span class="v" id="ivOut">—</span>
+        </div>
+        <div class="vrow" id="optRow" style="display: none">
+          <span class="k">optimal bundle (x*, y*)</span
+          ><span class="v" id="optOut">—</span>
+        </div>
+        <div class="pref" id="prefOut">—</div>
+      </div>
+      <div class="note">
+        Higher indifference curves lie farther from the origin and are
+        <i>preferred</i> under monotonicity. Convex-to-origin curves ⇔ convex
+        preferences (diminishing MRS).
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    Built for exploring consumer preference theory · drag bundles A and B on the
+    map · the 3D surface plots z = U(x, y), so each contour line is one
+    indifference curve sliced at constant height.
+  </footer>
+</div>
+
+<script>
+  /* ---------- robust Plotly loader (cdnjs only) ---------- */
+  const PLOTLY_URLS = [
+    'https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.35.2/plotly.min.js',
+    'https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.27.0/plotly.min.js',
+    'https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.20.0/plotly.min.js',
+  ];
+  function loadPlotly(i) {
+    return new Promise((res, rej) => {
+      if (i >= PLOTLY_URLS.length) return rej('no plotly');
+      const s = document.createElement('script');
+      s.src = PLOTLY_URLS[i];
+      s.onload = () =>
+        typeof Plotly !== 'undefined'
+          ? res()
+          : loadPlotly(i + 1).then(res, rej);
+      s.onerror = () => loadPlotly(i + 1).then(res, rej);
+      document.head.appendChild(s);
+    });
+  }
+
+  /* ===================================================== */
+  const DMIN = 0.05,
+    DMAX = 10,
+    N = 150,
+    N3 = 64;
+
+  const UTILS = {
+    cobb: {
+      formula: 'U(x, y) = x^a · y^b',
+      params: {
+        a: { lab: 'a', min: 0.3, max: 3, step: 0.1, val: 1 },
+        b: { lab: 'b', min: 0.3, max: 3, step: 0.1, val: 1 },
+      },
+      U: (x, y, p) =>
+        Math.pow(Math.max(x, 1e-6), p.a) * Math.pow(Math.max(y, 1e-6), p.b),
+    },
+    subs: {
+      formula: 'U(x, y) = a·x + b·y',
+      params: {
+        a: { lab: 'a', min: 0.2, max: 3, step: 0.1, val: 1 },
+        b: { lab: 'b', min: 0.2, max: 3, step: 0.1, val: 1.5 },
+      },
+      U: (x, y, p) => p.a * x + p.b * y,
+    },
+    comp: {
+      formula: 'U(x, y) = min(a·x, b·y)',
+      params: {
+        a: { lab: 'a', min: 0.3, max: 3, step: 0.1, val: 1 },
+        b: { lab: 'b', min: 0.3, max: 3, step: 0.1, val: 1 },
+      },
+      U: (x, y, p) => Math.min(p.a * x, p.b * y),
+    },
+    ces: {
+      formula: 'U(x, y) = ( a·x^ρ + b·y^ρ )^(1/ρ)',
+      params: {
+        a: { lab: 'a', min: 0.3, max: 2, step: 0.1, val: 1 },
+        b: { lab: 'b', min: 0.3, max: 2, step: 0.1, val: 1 },
+        rho: { lab: 'ρ', min: -3, max: 0.9, step: 0.1, val: 0.5 },
+      },
+      U: (x, y, p) => {
+        const r = p.rho;
+        if (Math.abs(r) < 1e-3)
+          return (
+            Math.pow(Math.max(x, 1e-6), p.a / (p.a + p.b)) *
+            Math.pow(Math.max(y, 1e-6), p.b / (p.a + p.b))
+          );
+        const v =
+          p.a * Math.pow(Math.max(x, 1e-6), r) +
+          p.b * Math.pow(Math.max(y, 1e-6), r);
+        return v > 0 ? Math.pow(v, 1 / r) : 0;
+      },
+    },
+    quasi: {
+      formula: 'U(x, y) = a·ln(x) + y',
+      params: { a: { lab: 'a', min: 0.5, max: 5, step: 0.1, val: 2 } },
+      U: (x, y, p) => p.a * Math.log(Math.max(x, 1e-6)) + y,
+    },
+  };
+
+  let state = {
+    key: 'cobb',
+    p: {},
+    ulvl: 45,
+    A: { x: 2, y: 6 },
+    B: { x: 6, y: 2.5 },
+    active: 'A',
+    budget: false,
+    px: 1,
+    py: 1,
+    m: 8,
+    view: '2d',
+    grid: null,
+    zmin: 0,
+    zmax: 1,
+  };
+
+  const $ = (id) => document.getElementById(id);
+  const U = (x, y) => UTILS[state.key].U(x, y, state.p);
+
+  /* build parameter sliders for the chosen function */
+  function buildParams() {
+    const def = UTILS[state.key].params,
+      host = $('params');
+    host.innerHTML = '';
+    state.p = {};
+    for (const k in def) {
+      const d = def[k];
+      state.p[k] = d.val;
+      const wrap = document.createElement('div');
+      wrap.className = 'ctrl';
+      wrap.innerHTML = `<div class="row"><span class="nm">parameter <i>${
+        d.lab
+      }</i></span>
+      <span class="val" id="pv_${k}">${d.val.toFixed(1)}</span></div>
+      <input type="range" id="pp_${k}" min="${d.min}" max="${d.max}" step="${
+        d.step
+      }" value="${d.val}">`;
+      host.appendChild(wrap);
+      $('pp_' + k).addEventListener('input', (e) => {
+        state.p[k] = parseFloat(e.target.value);
+        $('pv_' + k).textContent = state.p[k].toFixed(1);
+        recompute();
+      });
+    }
+    $('formula').textContent = UTILS[state.key].formula;
+  }
+
+  /* sample U on a grid; remember range */
+  function computeGrid(n) {
+    const xs = [],
+      ys = [],
+      z = [];
+    for (let i = 0; i < n; i++) {
+      const t = DMIN + ((DMAX - DMIN) * i) / (n - 1);
+      xs.push(t);
+      ys.push(t);
+    }
+    let mn = Infinity,
+      mx = -Infinity;
+    for (let j = 0; j < n; j++) {
+      const row = [];
+      for (let i = 0; i < n; i++) {
+        const v = U(xs[i], ys[j]);
+        row.push(v);
+        if (isFinite(v)) {
+          if (v < mn) mn = v;
+          if (v > mx) mx = v;
+        }
+      }
+      z.push(row);
+    }
+    return { xs, ys, z, mn, mx };
+  }
+
+  /* numeric MRS = Ux / Uy */
+  function mrs(x, y) {
+    const h = 1e-3;
+    const Ux = (U(x + h, y) - U(x - h, y)) / (2 * h);
+    const Uy = (U(x, y + h) - U(x, y - h)) / (2 * h);
+    if (Math.abs(Uy) < 1e-9) return Infinity;
+    return Ux / Uy;
+  }
+
+  /* indirect utility: maximise U on the budget line pₓx+p_yy=m */
+  function optimum() {
+    const { px, py, m } = state;
+    const xmax = m / px;
+    let best = { x: 0, y: 0, v: -Infinity };
+    const S = 600;
+    for (let i = 0; i <= S; i++) {
+      const x = (xmax * i) / S,
+        y = (m - px * x) / py;
+      if (y < 0) continue;
+      const v = U(Math.max(x, 1e-6), Math.max(y, 1e-6));
+      if (v > best.v) best = { x, y, v };
+    }
+    return best;
+  }
+
+  const COLORSCALE = [
+    /* warm gold -> teal, for the utility surface */ [0.0, '#e7c98a'],
+    [0.25, '#cdaf63'],
+    [0.5, '#7f9a6f'],
+    [0.75, '#2f8275'],
+    [1.0, '#0a4a40'],
+  ];
+
+  /* ---- theme palette for the plot (CSS handles the rest of the page) ---- */
+  const THEMES = {
+    light: {
+      plotBg: 'rgba(255,253,246,0.55)',
+      ink: '#23211c',
+      grid: 'rgba(185,172,140,.45)',
+      markerStroke: '#fffdf6',
+      labelBg: 'rgba(255,253,246,0.9)',
+      sceneBg: 'rgba(255,253,246,.4)',
+      sceneGrid: '#cbbfa3',
+      curve: '#a83a26',
+      A: '#a83a26',
+      B: '#2c5577',
+      gold: '#c08a2d',
+      shade: 'rgba(15,107,92,0.16)',
+    },
+    dark: {
+      plotBg: 'rgba(24,22,17,0.45)',
+      ink: '#e7ddc8',
+      grid: 'rgba(120,110,86,.42)',
+      markerStroke: '#15130d',
+      labelBg: 'rgba(24,22,17,0.92)',
+      sceneBg: 'rgba(24,22,17,.55)',
+      sceneGrid: '#473f30',
+      curve: '#e0795f',
+      A: '#e0795f',
+      B: '#7fb0db',
+      gold: '#d6a23f',
+      shade: 'rgba(47,174,150,0.20)',
+    },
+  };
+  let theme = 'light';
+  const T = () => THEMES[theme];
+
+  function baseLayout() {
+    return {
+      paper_bgcolor: 'rgba(0,0,0,0)',
+      plot_bgcolor: T().plotBg,
+      font: { family: 'Spectral, serif', color: T().ink, size: 13 },
+      margin: { l: 48, r: 18, t: 14, b: 44 },
+      showlegend: false,
+    };
+  }
+
+  /* rightmost point of the level set {U = lvl} within the domain (for the label) */
+  function rightmostOnLevel(g, lvl) {
+    const { xs, ys, z } = g,
+      n = xs.length;
+    let bx = -1,
+      by = 0;
+    const cross = (a, b) => (a <= 0 && b >= 0) || (a >= 0 && b <= 0);
+    for (let j = 0; j < n; j++)
+      for (let i = 0; i < n - 1; i++) {
+        const a = z[j][i] - lvl,
+          b = z[j][i + 1] - lvl;
+        if (cross(a, b)) {
+          const t =
+            Math.abs(a) + Math.abs(b) < 1e-12
+              ? 0
+              : Math.abs(a) / (Math.abs(a) + Math.abs(b));
+          const x = xs[i] + t * (xs[i + 1] - xs[i]);
+          if (x > bx) {
+            bx = x;
+            by = ys[j];
+          }
+        }
+      }
+    for (let i = 0; i < n; i++)
+      for (let j = 0; j < n - 1; j++) {
+        const a = z[j][i] - lvl,
+          b = z[j + 1][i] - lvl;
+        if (cross(a, b) && xs[i] > bx) {
+          bx = xs[i];
+          const t =
+            Math.abs(a) + Math.abs(b) < 1e-12
+              ? 0
+              : Math.abs(a) / (Math.abs(a) + Math.abs(b));
+          by = ys[j] + t * (ys[j + 1] - ys[j]);
+        }
+      }
+    return bx < 0 ? null : { x: bx, y: by };
+  }
+
+  /* ---------------- 2D ---------------- */
+  function render2D() {
+    const g = state.grid,
+      th = T();
+    const lvl = state.zmin + ((state.zmax - state.zmin) * state.ulvl) / 100;
+
+    // weakly-preferred (upper contour) set as translucent mask
+    const mask = g.z.map((row) => row.map((v) => (v >= lvl ? 1 : 0)));
+    const tShade = {
+      type: 'heatmap',
+      x: g.xs,
+      y: g.ys,
+      z: mask,
+      showscale: false,
+      hoverinfo: 'skip',
+      colorscale: [
+        [0, 'rgba(0,0,0,0)'],
+        [1, th.shade],
+      ],
+      zsmooth: 'best',
+    };
+
+    // the highlighted curve at level ū
+    const tHi = {
+      type: 'contour',
+      x: g.xs,
+      y: g.ys,
+      z: g.z,
+      showscale: false,
+      autocontour: false,
+      contours: { start: lvl, end: lvl, size: 1, coloring: 'lines' },
+      line: { width: 3.4, color: th.curve },
+      hoverinfo: 'skip',
+    };
+
+    const data = [tShade, tHi];
+
+    // budget line + optimum
+    let optTxt = '—',
+      ivTxt = '—';
+    if (state.budget) {
+      const { px, py, m } = state,
+        xint = m / px,
+        yint = m / py;
+      data.push({
+        type: 'scatter',
+        mode: 'lines',
+        x: [0, xint],
+        y: [yint, 0],
+        line: { color: th.ink, width: 2, dash: 'solid' },
+        hoverinfo: 'skip',
+      });
+      const o = optimum();
+      optTxt = `(${o.x.toFixed(2)}, ${o.y.toFixed(2)})`;
+      ivTxt = o.v.toFixed(2);
+      data.push({
+        type: 'contour',
+        x: g.xs,
+        y: g.ys,
+        z: g.z,
+        showscale: false,
+        autocontour: false,
+        contours: { start: o.v, end: o.v, size: 1, coloring: 'lines' },
+        line: { width: 2, color: th.gold },
+        hoverinfo: 'skip',
+      });
+      data.push({
+        type: 'scatter',
+        mode: 'markers+text',
+        x: [o.x],
+        y: [o.y],
+        marker: {
+          size: 13,
+          color: th.gold,
+          line: { color: th.markerStroke, width: 2 },
+          symbol: 'star',
+        },
+        text: ['optimum'],
+        textposition: 'top center',
+        textfont: { family: 'IBM Plex Mono', size: 10, color: th.gold },
+        hoverinfo: 'skip',
+      });
+    }
+
+    // bundle markers (named so the drag handler can restyle them directly)
+    data.push({
+      type: 'scatter',
+      mode: 'markers+text',
+      name: 'ptA',
+      x: [state.A.x],
+      y: [state.A.y],
+      marker: {
+        size: 15,
+        color: th.A,
+        line: { color: th.markerStroke, width: 2 },
+      },
+      text: ['A'],
+      textposition: 'top center',
+      textfont: { family: 'Fraunces', size: 15, color: th.A },
+      hovertemplate: 'A (%{x:.2f}, %{y:.2f})<extra></extra>',
+    });
+    data.push({
+      type: 'scatter',
+      mode: 'markers+text',
+      name: 'ptB',
+      x: [state.B.x],
+      y: [state.B.y],
+      marker: {
+        size: 15,
+        color: th.B,
+        line: { color: th.markerStroke, width: 2 },
+      },
+      text: ['B'],
+      textposition: 'top center',
+      textfont: { family: 'Fraunces', size: 15, color: th.B },
+      hovertemplate: 'B (%{x:.2f}, %{y:.2f})<extra></extra>',
+    });
+
+    // label the highlighted curve with its utility value, near its rightmost edge
+    const anns = [];
+    const rp = rightmostOnLevel(g, lvl);
+    if (rp) {
+      const rightish = rp.x > DMAX * 0.8;
+      anns.push({
+        x: rp.x,
+        y: rp.y,
+        text: 'U = ' + lvl.toFixed(2),
+        showarrow: false,
+        xanchor: rightish ? 'right' : 'left',
+        yanchor: 'bottom',
+        xshift: rightish ? -7 : 7,
+        yshift: 7,
+        font: { family: 'IBM Plex Mono', size: 12, color: th.curve },
+        bgcolor: th.labelBg,
+        bordercolor: th.curve,
+        borderwidth: 1,
+        borderpad: 3,
+      });
+    }
+
+    const layout = {
+      ...baseLayout(),
+      dragmode: false,
+      annotations: anns,
+      xaxis: {
+        title: { text: 'good x', font: { style: 'italic' } },
+        range: [0, DMAX],
+        zeroline: false,
+        gridcolor: th.grid,
+        linecolor: th.ink,
+        ticks: 'outside',
+        tickcolor: th.ink,
+      },
+      yaxis: {
+        title: { text: 'good y', font: { style: 'italic' } },
+        range: [0, DMAX],
+        zeroline: false,
+        gridcolor: th.grid,
+        linecolor: th.ink,
+        ticks: 'outside',
+        tickcolor: th.ink,
+      },
+    };
+
+    Plotly.react('plot', data, layout, {
+      displayModeBar: false,
+      responsive: true,
+    });
+
+    $('ivOut').textContent = ivTxt;
+    $('optOut').textContent = optTxt;
+  }
+
+  /* ---------------- 3D ---------------- */
+  function render3D() {
+    const g = computeGrid(N3),
+      th = T();
+    const lvl = state.zmin + ((state.zmax - state.zmin) * state.ulvl) / 100;
+    const span = state.zmax - state.zmin,
+      step = span / 4;
+    const surf = {
+      type: 'surface',
+      x: g.xs,
+      y: g.ys,
+      z: g.z,
+      colorscale: COLORSCALE,
+      showscale: false,
+      opacity: 0.93,
+      contours: {
+        x: { highlight: false },
+        y: { highlight: false },
+        z: {
+          show: span > 0,
+          usecolormap: false,
+          color: '#1b1813',
+          width: 3,
+          start: state.zmin + step,
+          end: state.zmin + 3 * step + step * 0.01,
+          size: step || 1,
+          highlight: true,
+          highlightcolor: th.curve,
+          highlightwidth: 8,
+        },
+      },
+      hovertemplate: 'x=%{x:.2f}, y=%{y:.2f}<br>U=%{z:.2f}<extra></extra>',
+    };
+    const plane = {
+      type: 'surface',
+      x: g.xs,
+      y: g.ys,
+      z: g.xs.map(() => g.ys.map(() => lvl)),
+      showscale: false,
+      opacity: 0.18,
+      colorscale: [
+        [0, th.curve],
+        [1, th.curve],
+      ],
+      hoverinfo: 'skip',
+    };
+    const ptsX = [state.A.x, state.B.x],
+      ptsY = [state.A.y, state.B.y],
+      ptsZ = [U(state.A.x, state.A.y), U(state.B.x, state.B.y)];
+    const pts = {
+      type: 'scatter3d',
+      mode: 'markers+text',
+      x: ptsX,
+      y: ptsY,
+      z: ptsZ,
+      marker: {
+        size: 6,
+        color: [th.A, th.B],
+        line: { color: th.markerStroke, width: 1 },
+      },
+      text: ['A', 'B'],
+      textfont: { family: 'Fraunces', size: 14, color: [th.A, th.B] },
+      hovertemplate: '%{text}: U=%{z:.2f}<extra></extra>',
+    };
+
+    const ax = (t) => ({
+      title: t,
+      backgroundcolor: th.sceneBg,
+      gridcolor: th.sceneGrid,
+      color: th.ink,
+    });
+    const layout = {
+      ...baseLayout(),
+      margin: { l: 0, r: 0, t: 0, b: 0 },
+      scene: {
+        xaxis: ax('x'),
+        yaxis: ax('y'),
+        zaxis: ax('U(x, y)'),
+        camera: { eye: { x: 1.6, y: -1.7, z: 1.0 } },
+        aspectmode: 'cube',
+      },
+    };
+    Plotly.react('plot', [surf, plane, pts], layout, {
+      displayModeBar: false,
+      responsive: true,
+    });
+  }
+
+  /* ---------------- shared recompute ---------------- */
+  function recompute() {
+    state.grid = computeGrid(N);
+    state.zmin = isFinite(state.grid.mn) ? state.grid.mn : 0;
+    state.zmax = isFinite(state.grid.mx) ? state.grid.mx : 1;
+
+    const lvl = state.zmin + ((state.zmax - state.zmin) * state.ulvl) / 100;
+    $('ulvlVal').textContent = 'ū = ' + lvl.toFixed(2);
+
+    updateVerdict();
+
+    if (state.view === '2d') render2D();
+    else render3D();
+  }
+
+  /* numeric readouts + preference verdict (cheap; safe to call on every drag frame) */
+  function updateVerdict() {
+    const ua = U(state.A.x, state.A.y),
+      ub = U(state.B.x, state.B.y);
+    $('uaOut').textContent = ua.toFixed(3);
+    $('ubOut').textContent = ub.toFixed(3);
+    $('coordA').textContent = `(${state.A.x.toFixed(2)}, ${state.A.y.toFixed(
+      2
+    )})`;
+    $('coordB').textContent = `(${state.B.x.toFixed(2)}, ${state.B.y.toFixed(
+      2
+    )})`;
+    const mr = mrs(state.A.x, state.A.y);
+    $('mrsOut').textContent = mr === Infinity ? '∞' : mr.toFixed(3);
+
+    const eps = 1e-4;
+    let txt;
+    if (Math.abs(ua - ub) <= eps * Math.max(1, Math.abs(ua)))
+      txt =
+        'A <span class="sym">∼</span> B &nbsp;<span style="font-size:14px;color:var(--ink-soft)">(indifferent)</span>';
+    else if (ua > ub)
+      txt =
+        '<span class="dotA">A</span> <span class="sym">≻</span> <span class="dotB">B</span>';
+    else
+      txt =
+        '<span class="dotB">B</span> <span class="sym">≻</span> <span class="dotA">A</span>';
+    $('prefOut').innerHTML = txt;
+  }
+
+  /* ---------------- wiring ---------------- */
+  function syncBundleInputs() {
+    $('coordA').textContent = `(${state.A.x.toFixed(2)}, ${state.A.y.toFixed(
+      2
+    )})`;
+    $('coordB').textContent = `(${state.B.x.toFixed(2)}, ${state.B.y.toFixed(
+      2
+    )})`;
+  }
+
+  function wire() {
+    $('ufn').addEventListener('change', (e) => {
+      state.key = e.target.value;
+      buildParams();
+      recompute();
+    });
+
+    $('ulvl').addEventListener('input', (e) => {
+      state.ulvl = +e.target.value;
+      recompute();
+    });
+
+    $('budgetOn').addEventListener('change', (e) => {
+      state.budget = e.target.checked;
+      $('budgetCtrls').style.display = state.budget ? 'block' : 'none';
+      $('ivRow').style.display = state.budget ? 'flex' : 'none';
+      $('optRow').style.display = state.budget ? 'flex' : 'none';
+      recompute();
+    });
+    [
+      ['px', 'pxV'],
+      ['py', 'pyV'],
+      ['m', 'mV'],
+    ].forEach(([id, vid]) => {
+      $(id).addEventListener('input', (e) => {
+        state[id] = parseFloat(e.target.value);
+        $(vid).textContent = state[id].toFixed(id === 'm' ? 1 : 1);
+        recompute();
+      });
+    });
+    $('pxV').textContent = state.px.toFixed(1);
+    $('pyV').textContent = state.py.toFixed(1);
+    $('mV').textContent = state.m.toFixed(1);
+
+    $('v2d').addEventListener('click', () => {
+      state.view = '2d';
+      $('v2d').classList.add('on');
+      $('v3d').classList.remove('on');
+      $('stageHint').textContent = 'Drag bundle A or B to reposition';
+      recompute();
+    });
+    $('v3d').addEventListener('click', () => {
+      state.view = '3d';
+      $('v3d').classList.add('on');
+      $('v2d').classList.remove('on');
+      $('stageHint').textContent =
+        'Drag to rotate · hover the surface to trace an indifference curve';
+      recompute();
+    });
+
+    $('themeBtn').addEventListener('click', () => {
+      theme = theme === 'dark' ? 'light' : 'dark';
+      applyTheme();
+      recompute();
+    });
+  }
+
+  function applyTheme() {
+    document.documentElement.setAttribute('data-theme', theme);
+    $('themeBtn').innerHTML = theme === 'dark' ? '☀&nbsp;Light' : '☾&nbsp;Dark';
+  }
+
+  /* ---------------- drag & drop for bundles A / B (2D only) ---------------- */
+  let dragBound = false,
+    dragging = null;
+
+  function plotGeom() {
+    const gd = $('plot');
+    const r = gd.getBoundingClientRect();
+    const fl = gd._fullLayout;
+    if (!fl || !fl._size) return null;
+    return { r, s: fl._size, xr: fl.xaxis.range, yr: fl.yaxis.range };
+  }
+  function dataToPixel(x, y, G) {
+    return {
+      cx: G.r.left + G.s.l + ((x - G.xr[0]) / (G.xr[1] - G.xr[0])) * G.s.w,
+      cy: G.r.top + G.s.t + ((G.yr[1] - y) / (G.yr[1] - G.yr[0])) * G.s.h,
+    };
+  }
+  function pixelToData(cx, cy, G) {
+    const fx = (cx - G.r.left - G.s.l) / G.s.w,
+      fy = (cy - G.r.top - G.s.t) / G.s.h;
+    return {
+      x: G.xr[0] + fx * (G.xr[1] - G.xr[0]),
+      y: G.yr[1] - fy * (G.yr[1] - G.yr[0]),
+    };
+  }
+  function nearestBundle(cx, cy, G) {
+    let best = null,
+      bd = 24; // grab radius (px)
+    for (const k of ['A', 'B']) {
+      const p = dataToPixel(state[k].x, state[k].y, G);
+      const d = Math.hypot(cx - p.cx, cy - p.cy);
+      if (d < bd) {
+        bd = d;
+        best = k;
+      }
+    }
+    return best;
+  }
+  function moveMarker(which) {
+    const gd = $('plot');
+    const idx = gd.data.findIndex(
+      (t) => t.name === (which === 'A' ? 'ptA' : 'ptB')
+    );
+    if (idx >= 0)
+      Plotly.restyle(gd, { x: [[state[which].x]], y: [[state[which].y]] }, [
+        idx,
+      ]);
+    updateVerdict();
+  }
+
+  function bindDrag() {
+    if (dragBound) return;
+    dragBound = true;
+    const gd = $('plot');
+    gd.style.touchAction = 'none';
+
+    gd.addEventListener(
+      'pointerdown',
+      (e) => {
+        if (state.view !== '2d') return;
+        const G = plotGeom();
+        if (!G) return;
+        const hit = nearestBundle(e.clientX, e.clientY, G);
+        if (!hit) return;
+        dragging = hit;
+        e.preventDefault();
+        e.stopPropagation();
+        try {
+          gd.setPointerCapture(e.pointerId);
+        } catch (_) {}
+        gd.style.cursor = 'grabbing';
+      },
+      true
+    );
+
+    gd.addEventListener('pointermove', (e) => {
+      const G = plotGeom();
+      if (!G) return;
+      if (!dragging) {
+        // hover feedback
+        if (state.view === '2d')
+          gd.style.cursor = nearestBundle(e.clientX, e.clientY, G)
+            ? 'grab'
+            : '';
+        return;
+      }
+      e.preventDefault();
+      const d = pixelToData(e.clientX, e.clientY, G);
+      state[dragging] = {
+        x: Math.min(DMAX, Math.max(DMIN, d.x)),
+        y: Math.min(DMAX, Math.max(DMIN, d.y)),
+      };
+      moveMarker(dragging);
+    });
+
+    const end = (e) => {
+      if (dragging) {
+        dragging = null;
+        gd.style.cursor = '';
+      }
+    };
+    gd.addEventListener('pointerup', end);
+    gd.addEventListener('pointercancel', end);
+    window.addEventListener('pointerup', end);
+  }
+
+  /* ---------------- boot ---------------- */
+  loadPlotly(0)
+    .then(() => {
+      buildParams();
+      syncBundleInputs();
+      applyTheme();
+      wire();
+      recompute();
+      bindDrag();
+    })
+    .catch(() => {
+      $('plot').innerHTML =
+        '<div class="loading">Could not load the plotting library. Check the network/connector settings and reload.</div>';
+    });
+</script>
